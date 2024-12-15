@@ -172,6 +172,8 @@ class SignUpViewController: UIViewController {
             if let error = error {
                 self.showAlert(message: "Failed to save user data: \(error.localizedDescription)")
             } else {
+                // Save the username to User.shared
+                User.shared.username = username
                 self.navigateToNextScreen()
             }
         }
