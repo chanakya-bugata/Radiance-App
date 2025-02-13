@@ -129,10 +129,11 @@ class Question1ViewController: UIViewController {
             return
         }
         
-        guard let ageText = ageTextField.text, let age = Int(ageText), age > 0 else {
-            showAlert(message: "Please enter a valid age.")
+        guard let ageText = ageTextField.text, let age = Int(ageText), (1...120).contains(age) else {
+            showAlert(message: "Please enter a valid age between 1 and 120.")
             return
         }
+        
         
         guard let gender = selectedGender else {
             showAlert(message: "Please select a gender.")
@@ -148,9 +149,7 @@ class Question1ViewController: UIViewController {
         User.shared.saveToFirebase()
         
         // Navigate to the next screen
-        if let nextVC = storyboard?.instantiateViewController(withIdentifier: "Question2ViewController") as? Question2ViewController {
-            navigationController?.pushViewController(nextVC, animated: true)
-        }
+        navigateToNextScreen()
     }
     
     func showAlert(message: String) {
@@ -160,9 +159,17 @@ class Question1ViewController: UIViewController {
     }
     
     @IBAction func skipButtonTapped(_ sender: UIButton) {
+        User.shared.name = "Anonymous"
+        User.shared.age = 0
+        User.shared.gender = "Not Specified"
+        User.shared.saveToFirebase()
+        
+        navigateToNextScreen()
+    }
+    
+    func navigateToNextScreen() {
         if let nextVC = storyboard?.instantiateViewController(withIdentifier: "Question2ViewController") as? Question2ViewController {
             navigationController?.pushViewController(nextVC, animated: true)
         }
     }
-    
 }

@@ -151,34 +151,37 @@ class SignUpViewController: UIViewController {
             }
     }
     private func registerUser(email: String, username: String, password: String) {
-        // Firebase Authentication - Create user
         Auth.auth().createUser(withEmail: email, password: password) { authResult, error in
             if let error = error {
                 self.showAlert(message: "Error: \(error.localizedDescription)")
                 return
             }
-            
-            // Save additional user info to Firestore
-            if let userID = Auth.auth().currentUser?.uid {
-                self.saveUserData(userID: userID, email: email, username: username)
-            }
+            self.saveUserData(email: email, username: username)
         }
     }
     
-    private func saveUserData(userID: String, email: String, username: String) {
-        db.collection("users").document(userID).setData([
+    private func saveUserData(email: String, username: String) {
+        db.collection("users").document(email).setData([
             "email": email,
             "username": username,
+            "skinConcerns": [],
+            "skinTypes": [],
+            "skinGoals": [],
             "createdAt": Timestamp(date: Date())
-        ]) { error in
+        ], merge: true) { error in
             if let error = error {
                 self.showAlert(message: "Failed to save user data: \(error.localizedDescription)")
             } else {
-                // Navigate to the next screen
-                if let nextVC = self.storyboard?.instantiateViewController(withIdentifier: "Question1ViewController") as? Question1ViewController {
-                    self.navigationController?.pushViewController(nextVC, animated: true)
-                }
+                // Save the username to User.shared
+                User.shared.username = username
+                self.navigateToNextScreen()
             }
+        }
+    }
+        
+    private func navigateToNextScreen() {
+        if let nextVC = storyboard?.instantiateViewController(withIdentifier: "Question1ViewController") as? Question1ViewController {
+            navigationController?.pushViewController(nextVC, animated: true)
         }
     }
     
@@ -193,26 +196,23 @@ class SignUpViewController: UIViewController {
         guard let clientID = FirebaseApp.app()?.options.clientID else { return }
         let config = GIDConfiguration(clientID: clientID)
         GIDSignIn.sharedInstance.configuration = config
-
         
         GIDSignIn.sharedInstance.signIn(withPresenting: self) { [unowned self] result, error in
             if let error = error {
-                self.showAlert(message: "Google Sign-In failed: \(error.localizedDescription)")
+                showAlert(message: "Google Sign-In failed: \(error.localizedDescription)")
                 return
             }
-            
             guard let user = result?.user, let idToken = user.idToken?.tokenString else { return }
-            
-            let credential = GoogleAuthProvider.credential(withIDToken: idToken,
-                                                            accessToken: user.accessToken.tokenString)
+            let credential = GoogleAuthProvider.credential(withIDToken: idToken, accessToken: user.accessToken.tokenString)
             
             Auth.auth().signIn(with: credential) { authResult, error in
                 if let error = error {
-                    self.showAlert(message: "Firebase Sign-In failed: \(error.localizedDescription)")
+                    showAlert(message: "Firebase Sign-In failed: \(error.localizedDescription)")
                     return
                 }
-                
-                self.saveUserData(userID: authResult!.user.uid, email: user.profile?.email ?? "", username: user.profile?.name ?? "")
+                let email = user.profile?.email ?? ""
+                let username = user.profile?.name ?? email.components(separatedBy: "@").first ?? "unknown_user"
+                saveUserData(email: email, username: username)
             }
         }
     }

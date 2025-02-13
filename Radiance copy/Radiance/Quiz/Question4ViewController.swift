@@ -87,33 +87,33 @@ class Question4ViewController: UIViewController {
     }
     
     @objc func goalButtonTapped(_ sender: UIButton) {
+        guard let title = sender.titleLabel?.text else { return }
+        
         if sender.backgroundColor == customPink {
             sender.backgroundColor = .white
             sender.setTitleColor(.black, for: .normal)
-            if let title = sender.titleLabel?.text, let index = selectedSkinGoal.firstIndex(of: title) {
-                selectedSkinGoal.remove(at: index)
+            if let index = User.shared.skinGoals.firstIndex(of: title) {
+                User.shared.skinGoals.remove(at: index)
             }
         } else {
             sender.backgroundColor = customPink
             sender.setTitleColor(.white, for: .normal)
-            if let title = sender.titleLabel?.text, !selectedSkinGoal.contains(title) {
-                selectedSkinGoal.append(title)
+            if !User.shared.skinGoals.contains(title) {
+                User.shared.skinGoals.append(title)
             }
         }
     }
     
     @IBAction func finishButtonTapped(_ sender: Any) {
         // Validate selection
-        if selectedSkinGoal.isEmpty {
+        if User.shared.skinGoals.isEmpty {
             showAlert(message: "Please select at least one skin goal.")
             return
         }
         
-        // Save the selected skin goals to the User singleton
-        User.shared.skinGoals = selectedSkinGoal
+        // Save data using User singleton
+        User.shared.saveToFirebase()
         
-        // Save the user data to Firebase
-        saveSkinGoalsToFirebase()
         
         // Show success alert
         let alert = UIAlertController(title: "Success", message: "You have successfully completed the quiz!", preferredStyle: .alert)
@@ -123,24 +123,6 @@ class Question4ViewController: UIViewController {
         present(alert, animated: true, completion: nil)
     }
     
-    func saveSkinGoalsToFirebase() {
-        guard let userID = Auth.auth().currentUser?.uid else { return }
-        
-        let userRef = Firestore.firestore().collection("users").document(userID)
-        
-        let data: [String: Any] = [
-            "skinGoals": User.shared.skinGoals
-        ]
-        
-        userRef.setData(data, merge: true) { error in
-            if let error = error {
-                print("Error saving skin goals: \(error.localizedDescription)")
-                self.showAlert(message: "Failed to save your skin goals. Please try again.")
-            } else {
-                print("Skin goals successfully saved to Firebase.")
-            }
-        }
-    }
     
     func showAlert(message: String) {
         let alert = UIAlertController(title: "Invalid Input", message: message, preferredStyle: .alert)
@@ -159,13 +141,6 @@ class Question4ViewController: UIViewController {
     }
     
     @IBAction func skipButtonTapped(_ sender: UIButton) {
-        let storyboard = UIStoryboard(name: "Main", bundle: nil)
-        if let tabBarController = storyboard.instantiateViewController(withIdentifier: "MainTabBarController") as? UITabBarController {
-            if let window = UIApplication.shared.windows.first {
-                window.rootViewController = tabBarController
-                window.makeKeyAndVisible()
-            }
-        }
+        navigateToNextScreen()
     }
 }
-

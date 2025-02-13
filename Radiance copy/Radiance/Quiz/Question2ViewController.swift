@@ -103,15 +103,15 @@ class Question2ViewController: UIViewController {
     @objc func concernButtonTapped(_ sender: UIButton) {
         guard let title = sender.titleLabel?.text else { return }
         
-        if sender.backgroundColor == customPink {
-            // Deselect button
+        if User.shared.skinConcerns.contains(title) {
+            // Deselect the button
             sender.backgroundColor = .white
             sender.setTitleColor(.black, for: .normal)
             if let index = User.shared.skinConcerns.firstIndex(of: title) {
                 User.shared.skinConcerns.remove(at: index)
             }
         } else {
-            // Select button
+            // Select the button
             sender.backgroundColor = customPink
             sender.setTitleColor(.white, for: .normal)
             User.shared.skinConcerns.append(title)
@@ -124,28 +124,9 @@ class Question2ViewController: UIViewController {
             return
         }
         
-        // Update Firestore database
-        updateSkinConcernsInFirestore()
-    }
-    
-    // Function to update Firebase with skin concerns
-    func updateSkinConcernsInFirestore() {
-        // Using the singleton User.shared instance for storing skin concerns
-        let userRef = Firestore.firestore().collection("users").document(Auth.auth().currentUser?.uid ?? "defaultID")
-        
-        let data: [String: Any] = [
-            "skinConcerns": User.shared.skinConcerns
-        ]
-        
-        userRef.setData(data, merge: true) { error in
-            if let error = error {
-                print("Error updating skin concerns: \(error.localizedDescription)")
-                self.showAlert(message: "Failed to save your skin concerns. Please try again.")
-            } else {
-                print("Skin concerns updated successfully")
-                self.navigateToNextScreen()
-            }
-        }
+        // Save data using User singleton
+        User.shared.saveToFirebase()
+        navigateToNextScreen()
     }
     
     // Function to navigate to the next screen
@@ -162,8 +143,6 @@ class Question2ViewController: UIViewController {
     }
     
     @IBAction func skipButtonTapped(_ sender: UIButton) {
-        if let nextVC = storyboard?.instantiateViewController(withIdentifier: "Question3ViewController") as? Question3ViewController {
-            navigationController?.pushViewController(nextVC, animated: true)
-        }
+        navigateToNextScreen()
     }
 }

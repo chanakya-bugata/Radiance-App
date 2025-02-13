@@ -14,6 +14,13 @@ struct Category {
     let imageName: String
 }
 
+
+// Model for Ingredients
+struct Ingredient {
+    var name: String
+    var riskLevel: Int
+}
+
 // Model for the Products
 struct Product {
     let name: String
@@ -28,11 +35,6 @@ struct Product {
     let url: String
 }
 
-// Model for Ingredients
-struct Ingredient {
-    var name: String
-    var riskLevel: Int
-}
 
 // Model for Reviews
 struct Review {

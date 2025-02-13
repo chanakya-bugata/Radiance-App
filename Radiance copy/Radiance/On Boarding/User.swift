@@ -5,7 +5,6 @@
 //  Created by admin12 on 15/12/24.
 //
 
-
 import Foundation
 import FirebaseAuth
 import FirebaseFirestore
@@ -13,8 +12,10 @@ import FirebaseFirestore
 class User {
     // Singleton instance
     static let shared = User()
-
+    
     // Properties to store user data
+    var email: String?          // New property
+    var username: String?       // New property
     var name: String?
     var age: Int?
     var gender: String?
@@ -23,14 +24,25 @@ class User {
     var skinGoals: [String] = []
 
     // Private initializer to prevent creating multiple instances
-    private init() {}
+    private init() {
+        // Fetch the email from Firebase Auth when the singleton is initialized
+        if let currentUserEmail = Auth.auth().currentUser?.email {
+            self.email = currentUserEmail
+        }
+    }
 
-    // Method to save user data to Firebase (you can modify this as needed)
+    // Method to save user data to Firebase
     func saveToFirebase() {
-        guard let email = Auth.auth().currentUser?.email else { return }
-        let userRef = Firestore.firestore().collection("users").document(email)
+        guard let userEmail = email else {
+            print("Error: Email is unavailable. User must be logged in.")
+            return
+        }
+        
+        let userRef = Firestore.firestore().collection("users").document(userEmail)
 
         let data: [String: Any] = [
+            "email": userEmail,              // Save email explicitly
+            "username": username ?? "",      // Save username
             "name": name ?? "",
             "age": age ?? 0,
             "gender": gender ?? "",

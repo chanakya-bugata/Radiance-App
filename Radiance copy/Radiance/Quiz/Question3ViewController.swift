@@ -81,55 +81,36 @@ class Question3ViewController: UIViewController {
     
     // Action for button tap to toggle selection state
     @objc func skinTypeButtonTapped(_ sender: UIButton) {
+        guard let title = sender.titleLabel?.text else { return }
+        
         if sender.backgroundColor == customPink {
             sender.backgroundColor = .white
             sender.setTitleColor(.black, for: .normal)
-            if let title = sender.titleLabel?.text, let index = selectedSkinType.firstIndex(of: title) {
-                selectedSkinType.remove(at: index)
+            if let index = User.shared.skinTypes.firstIndex(of: title) {
+                User.shared.skinTypes.remove(at: index)
             }
         } else {
             sender.backgroundColor = customPink
             sender.setTitleColor(.white, for: .normal)
-            if let title = sender.titleLabel?.text, !selectedSkinType.contains(title) {
-                selectedSkinType.append(title)
+            if !User.shared.skinTypes.contains(title) {
+                User.shared.skinTypes.append(title)
             }
         }
     }
     
     @IBAction func nextButtonTapped(_ sender: UIButton) {
-        if selectedSkinType.isEmpty {
+        if User.shared.skinTypes.isEmpty {
             showAlert(message: "Please select at least one skin type.")
             return
         }
         
         // Save selected skin types to User.shared
-        User.shared.skinTypes = selectedSkinType
+        User.shared.saveToFirebase()
         
-        // Save data to Firebase
-        saveSkinTypesToFirebase()
         
         // Proceed to next screen (Question 4)
         if let nextVC = storyboard?.instantiateViewController(withIdentifier: "Question4ViewController") as? Question4ViewController {
             navigationController?.pushViewController(nextVC, animated: true)
-        }
-    }
-    
-    func saveSkinTypesToFirebase() {
-        guard let userID = Auth.auth().currentUser?.uid else { return }
-        
-        let userRef = Firestore.firestore().collection("users").document(userID)
-        
-        let data: [String: Any] = [
-            "skinTypes": User.shared.skinTypes
-        ]
-        
-        userRef.setData(data, merge: true) { error in
-            if let error = error {
-                print("Error saving skin types: \(error.localizedDescription)")
-                self.showAlert(message: "Failed to save your skin types. Please try again.")
-            } else {
-                print("Skin types successfully saved to Firebase.")
-            }
         }
     }
     

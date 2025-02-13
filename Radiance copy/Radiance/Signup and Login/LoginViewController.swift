@@ -103,14 +103,25 @@ class LoginViewController: UIViewController {
         }
     }
     
+    private func isValidEmail(_ email: String) -> Bool {
+        let emailRegex = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,64}"
+        return NSPredicate(format: "SELF MATCHES %@", emailRegex).evaluate(with: email)
+    }
+
+    
     private func validateFields() -> Bool {
         guard let email = emailTextField.text, !email.isEmpty,
               let password = passwordTextField.text, !password.isEmpty else {
             showAlert(message: "Please fill in all fields.")
             return false
         }
+        if !isValidEmail(email) {
+            showAlert(message: "Please enter a valid email address.")
+            return false
+        }
         return true
     }
+
     
     private func showAlert(message: String) {
         let alert = UIAlertController(title: "Error", message: message, preferredStyle: .alert)
@@ -121,12 +132,18 @@ class LoginViewController: UIViewController {
     private func navigateToMainTabBarController() {
         let storyboard = UIStoryboard(name: "Main", bundle: nil)
         if let tabBarController = storyboard.instantiateViewController(withIdentifier: "MainTabBarController") as? UITabBarController {
-            if let window = UIApplication.shared.windows.first {
+            guard let window = UIApplication.shared.windows.first else { return }
+            
+            UIView.transition(with: window,
+                              duration: 0.5,
+                              options: .transitionFlipFromRight,
+                              animations: {
                 window.rootViewController = tabBarController
-                window.makeKeyAndVisible()
-            }
+            },
+                              completion: nil)
         }
     }
+
     
     @IBAction func forgotPasswordTapped(_ sender: UIButton) {
         let alert = UIAlertController(title: "Reset Password",
@@ -154,10 +171,11 @@ class LoginViewController: UIViewController {
             if let error = error {
                 self.showAlert(message: "Failed to send reset link: \(error.localizedDescription)")
             } else {
-                self.showAlert(message: "Password reset link sent to \(email).")
+                self.showAlert(message: "A password reset link has been sent to \(email). Please check your email inbox.")
             }
         }
     }
+
     
     @IBAction func signUpButtonTapped(_ sender: UIButton) {
         if let nextVC = storyboard?.instantiateViewController(withIdentifier: "SignUpViewController") as? SignUpViewController {
